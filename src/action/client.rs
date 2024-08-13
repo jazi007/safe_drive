@@ -384,21 +384,19 @@ impl<T: ActionMsg> Future for AsyncGoalReceiver<T> {
             Err(RCLActionError::ClientTakeFailed) => {}
             Err(e) => return Poll::Ready(Err(e.into())),
         }
-
         let mut waker = Some(cx.waker().clone());
         let mut guard = SELECTOR.lock();
-
+        let goal = Box::new(move || {
+            waker.take().unwrap().wake();
+            CallbackResult::Remove
+        });
         match guard.send_command(
             &this.client.inner.data.node.context,
             async_selector::Command::ActionClient {
                 data: this.client.inner.data.clone(),
                 feedback: Box::new(|| CallbackResult::Ok),
                 status: Box::new(|| CallbackResult::Ok),
-                goal: Box::new(move || {
-                    let w = waker.take().unwrap();
-                    w.wake();
-                    CallbackResult::Remove
-                }),
+                goal,
                 cancel: Box::new(|| CallbackResult::Ok),
                 result: Box::new(|| CallbackResult::Ok),
             },
@@ -520,7 +518,10 @@ impl<T: ActionMsg> Future for AsyncCancelReceiver<T> {
 
         let mut waker = Some(cx.waker().clone());
         let mut guard = SELECTOR.lock();
-
+        let cancel = Box::new(move || {
+            waker.take().unwrap().wake();
+            CallbackResult::Remove
+        });
         match guard.send_command(
             &this.client.inner.data.node.context,
             async_selector::Command::ActionClient {
@@ -528,11 +529,7 @@ impl<T: ActionMsg> Future for AsyncCancelReceiver<T> {
                 feedback: Box::new(|| CallbackResult::Ok),
                 status: Box::new(|| CallbackResult::Ok),
                 goal: Box::new(|| CallbackResult::Ok),
-                cancel: Box::new(move || {
-                    let w = waker.take().unwrap();
-                    w.wake();
-                    CallbackResult::Remove
-                }),
+                cancel,
                 result: Box::new(|| CallbackResult::Ok),
             },
         ) {
@@ -671,7 +668,10 @@ impl<T: ActionMsg> Future for AsyncResultReceiver<T> {
 
         let mut waker = Some(cx.waker().clone());
         let mut guard = SELECTOR.lock();
-
+        let result = Box::new(move || {
+            waker.take().unwrap().wake();
+            CallbackResult::Remove
+        });
         match guard.send_command(
             &this.client.inner.data.node.context,
             async_selector::Command::ActionClient {
@@ -680,11 +680,7 @@ impl<T: ActionMsg> Future for AsyncResultReceiver<T> {
                 status: Box::new(|| CallbackResult::Ok),
                 goal: Box::new(|| CallbackResult::Ok),
                 cancel: Box::new(|| CallbackResult::Ok),
-                result: Box::new(move || {
-                    let w = waker.take().unwrap();
-                    w.wake();
-                    CallbackResult::Remove
-                }),
+                result,
             },
         ) {
             Ok(_) => {
@@ -750,16 +746,15 @@ impl<T: ActionMsg> Future for AsyncFeedbackReceiver<T> {
 
         let mut waker = Some(cx.waker().clone());
         let mut guard = SELECTOR.lock();
-
+        let feedback = Box::new(move || {
+            waker.take().unwrap().wake();
+            CallbackResult::Remove
+        });
         match guard.send_command(
             &this.data.node.context,
             async_selector::Command::ActionClient {
                 data: this.data.clone(),
-                feedback: Box::new(move || {
-                    let w = waker.take().unwrap();
-                    w.wake();
-                    CallbackResult::Remove
-                }),
+                feedback,
                 status: Box::new(|| CallbackResult::Ok),
                 goal: Box::new(|| CallbackResult::Ok),
                 cancel: Box::new(|| CallbackResult::Ok),
@@ -829,17 +824,16 @@ impl<T: ActionMsg> Future for AsyncStatusReceiver<T> {
 
         let mut waker = Some(cx.waker().clone());
         let mut guard = SELECTOR.lock();
-
+        let status = Box::new(move || {
+            waker.take().unwrap().wake();
+            CallbackResult::Remove
+        });
         match guard.send_command(
             &this.data.node.context,
             async_selector::Command::ActionClient {
                 data: this.data.clone(),
                 feedback: Box::new(|| CallbackResult::Ok),
-                status: Box::new(move || {
-                    let w = waker.take().unwrap();
-                    w.wake();
-                    CallbackResult::Remove
-                }),
+                status,
                 goal: Box::new(|| CallbackResult::Ok),
                 cancel: Box::new(|| CallbackResult::Ok),
                 result: Box::new(|| CallbackResult::Ok),

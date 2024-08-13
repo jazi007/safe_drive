@@ -557,7 +557,7 @@ impl<T: ActionMsg> ServerCancelSend<T> {
         } else {
             let mut empty = vec![];
             response.msg.goals_canceling = bindgen_action_msgs__msg__GoalInfo__Sequence {
-                data: empty.as_mut_ptr() as *mut _ as *mut bindgen_action_msgs__msg__GoalInfo,
+                data: empty.as_mut_ptr() as *mut _,
                 size: 0,
                 capacity: 0,
             };
@@ -639,17 +639,16 @@ impl<T: ActionMsg> Future for AsyncCancelReceiver<T> {
             RecvResult::RetryLater(_) => {
                 let mut waker = Some(cx.waker().clone());
                 let mut guard = SELECTOR.lock();
-
+                let cancel = Box::new(move || {
+                    waker.take().unwrap().wake();
+                    CallbackResult::Remove
+                });
                 match guard.send_command(
                     &this.server.data.node.context,
                     Command::ActionServer {
                         data: this.server.data.clone(),
                         goal: Box::new(move || CallbackResult::Ok),
-                        cancel: Box::new(move || {
-                            let w = waker.take().unwrap();
-                            w.wake();
-                            CallbackResult::Remove
-                        }),
+                        cancel,
                         result: Box::new(move || CallbackResult::Ok),
                     },
                 ) {

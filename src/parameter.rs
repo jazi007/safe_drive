@@ -406,17 +406,15 @@ impl Parameters {
     }
 
     pub fn add_parameter(&mut self, name: String, parameter: Parameter) -> Result<(), DynError> {
-        if let Some(_) = self.params.get_mut(&name) {
+        if self.params.get_mut(&name).is_some() {
             let msg: String = format!("{} is already declared", name);
             Err(msg.into())
+        } else if parameter.check_range(&parameter.value) {
+            self.params.insert(name, parameter);
+            Ok(())
         } else {
-            if parameter.check_range(&parameter.value) {
-                self.params.insert(name, parameter);
-                Ok(())
-            } else {
-                let msg = format!("{} is exceeding the range", name);
-                return Err(msg.into());
-            }
+            let msg = format!("{} is exceeding the range", name);
+            return Err(msg.into());
         }
     }
 

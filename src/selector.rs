@@ -556,6 +556,7 @@ impl Selector {
     /// requests from action clients arrive.
     /// - `goal_handler` is invoked when the action server receives a new goal.
     /// - `cancel_goal_handler` is invoked when the action server receives a
+    ///
     /// request to cancel a goal.
     /// Requests for goal results are automatically handled.
     ///
@@ -1210,13 +1211,13 @@ impl Selector {
             };
 
             let timeout_nanos = timeout.as_nanos();
-            let timeout_nanos = if timeout_nanos > i64::max_value() as u128 {
+            let timeout_nanos = if timeout_nanos > i64::MAX as u128 {
                 let logger = Logger::new("safe_drive");
                 pr_error_in!(
                     logger,
                     "timeout value became too big (overflow): timeout = {timeout_nanos}"
                 );
-                i64::max_value()
+                i64::MAX
             } else {
                 timeout_nanos as i64
             };
