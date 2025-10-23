@@ -982,6 +982,22 @@ impl MTSafeFn {
         })
     }
 
+    pub fn rcl_publish_serialized_message(
+        publisher: *const rcl_publisher_t,
+        data: &[u8],
+        allocation: *mut rmw_publisher_allocation_t,
+    ) -> RCLResult<()> {
+        let ros_message = rcl_serialized_message_t {
+            buffer: data.as_ptr() as *mut u8,
+            buffer_length: data.len(),
+            buffer_capacity: data.len(),
+            allocator: unsafe { self::rcutils_get_default_allocator() }
+        };
+        ret_val_to_err(unsafe {
+            self::rcl_publish_serialized_message(publisher, (&ros_message) as *const _, allocation)
+        })
+    }
+
     pub fn rmw_get_default_publisher_options() -> rmw_publisher_options_t {
         unsafe { self::rmw_get_default_publisher_options() }
     }

@@ -254,6 +254,35 @@ impl<T: TypeSupport> Publisher<T> {
         Ok(())
     }
 
+    /// Send a raw message.
+    ///
+    /// # Safety
+    ///
+    /// This function is marked unsafe as the user is reponsable for CDR serialization
+    ///
+    pub unsafe fn send_raw(&self, msg: &[u8]) -> Result<(), DynError> {
+        if crate::is_halt() {
+            return Err(Signaled.into());
+        }
+        #[cfg(feature = "rcl_stat")]
+        let start = std::time::SystemTime::now();
+
+        if let Err(e) =
+            rcl::MTSafeFn::rcl_publish_serialized_message(self.publisher.as_ref(), msg, null_mut())
+        {
+            return Err(e.into());
+        }
+
+        #[cfg(feature = "rcl_stat")]
+        {
+            if let Ok(dur) = start.elapsed() {
+                let mut guard = self.latency_publish.lock();
+                guard.add(dur);
+            }
+        }
+
+        Ok(())
+    }
     /// Get latency statistics information of `rcl_publish()`.
     #[cfg(feature = "rcl_stat")]
     pub fn statistics(&self) -> SerializableTimeStat {
