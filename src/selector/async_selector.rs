@@ -167,34 +167,36 @@ fn select(
             }
         }
 
-        if let Err(_e) = selector.wait() {
-            if signal_handler::is_halt() {
-                for (_, h) in selector.subscriptions.iter_mut() {
-                    if let Some(handler) = &mut h.handler {
-                        (*handler)();
-                    }
+        if selector
+            .wait()
+            .is_err()
+            && signal_handler::is_halt()
+        {
+            for (_, h) in selector.subscriptions.iter_mut() {
+                if let Some(handler) = &mut h.handler {
+                    (*handler)();
                 }
-
-                for (_, h) in selector.services.iter_mut() {
-                    if let Some(handler) = &mut h.handler {
-                        (*handler)();
-                    }
-                }
-
-                for (_, h) in selector.clients.iter_mut() {
-                    if let Some(handler) = &mut h.handler {
-                        (*handler)();
-                    }
-                }
-
-                for (_, h) in selector.cond.iter_mut() {
-                    if let Some(handler) = &mut h.handler {
-                        (*handler)();
-                    }
-                }
-
-                return Ok(());
             }
+
+            for (_, h) in selector.services.iter_mut() {
+                if let Some(handler) = &mut h.handler {
+                    (*handler)();
+                }
+            }
+
+            for (_, h) in selector.clients.iter_mut() {
+                if let Some(handler) = &mut h.handler {
+                    (*handler)();
+                }
+            }
+
+            for (_, h) in selector.cond.iter_mut() {
+                if let Some(handler) = &mut h.handler {
+                    (*handler)();
+                }
+            }
+
+            return Ok(());
         }
     }
 }

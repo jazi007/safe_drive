@@ -1118,7 +1118,9 @@ impl Selector {
 
             // set services
             for (_, h) in self.services.iter() {
-                let service = h.event.lock();
+                let Some(service) = h.event.try_lock() else {
+                    continue;
+                };
                 guard.rcl_wait_set_add_service(&mut self.wait_set, &service.service, null_mut())?;
             }
 
